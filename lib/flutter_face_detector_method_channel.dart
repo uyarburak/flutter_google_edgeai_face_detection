@@ -18,14 +18,15 @@ class MethodChannelFlutterFaceDetector extends FlutterFaceDetectorPlatform {
   }
 
   @override
-  Future<FaceDetectionResult> faceDetectionFromImage(Uint8List imageData) async {
+  Future<FaceDetectionResult> faceDetectionFromImage(
+      Uint8List imageData) async {
     final result = await methodChannel.invokeMethod<dynamic>(
       'faceDetectionFromImage',
       <dynamic, dynamic>{'image': imageData},
     );
 
     if (result is Map) {
-      return FaceDetectionResult.fromMap(Map<String, dynamic>.from(result));
+      return FaceDetectionResult.fromMap(_convertMap(result));
     } else {
       throw PlatformException(
         code: 'INVALID_RESPONSE',
@@ -33,5 +34,29 @@ class MethodChannelFlutterFaceDetector extends FlutterFaceDetectorPlatform {
         details: result,
       );
     }
+  }
+
+  Map<String, dynamic> _convertMap(Map<dynamic, dynamic> map) {
+    return map.map((key, value) {
+      if (value is Map) {
+        return MapEntry(key.toString(), _convertMap(value));
+      } else if (value is List) {
+        return MapEntry(key.toString(), _convertList(value));
+      } else {
+        return MapEntry(key.toString(), value);
+      }
+    });
+  }
+
+  List<dynamic> _convertList(List<dynamic> list) {
+    return list.map((item) {
+      if (item is Map) {
+        return _convertMap(item);
+      } else if (item is List) {
+        return _convertList(item);
+      } else {
+        return item;
+      }
+    }).toList();
   }
 }

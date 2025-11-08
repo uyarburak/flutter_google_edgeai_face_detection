@@ -13,8 +13,13 @@ class FaceDetection {
 
   factory FaceDetection.fromMap(Map<String, dynamic> map) {
     return FaceDetection(
-      confidence: (map['confidence'] as num).toDouble(),
-      boundingBox: BoundingBox.fromMap(map['boundingBox'] as Map<String, dynamic>),
+      confidence: (map['confidence'] as num?)?.toDouble() ?? 0.0,
+      boundingBox: BoundingBox.fromMap(
+        (map['boundingBox'] as Map<dynamic, dynamic>?)?.map(
+              (key, value) => MapEntry(key.toString(), value),
+            ) ??
+            {},
+      ),
     );
   }
 
@@ -54,10 +59,10 @@ class BoundingBox {
 
   factory BoundingBox.fromMap(Map<String, dynamic> map) {
     return BoundingBox(
-      x: (map['x'] as num).toDouble(),
-      y: (map['y'] as num).toDouble(),
-      width: (map['width'] as num).toDouble(),
-      height: (map['height'] as num).toDouble(),
+      x: (map['x'] as num?)?.toDouble() ?? 0.0,
+      y: (map['y'] as num?)?.toDouble() ?? 0.0,
+      width: (map['width'] as num?)?.toDouble() ?? 0.0,
+      height: (map['height'] as num?)?.toDouble() ?? 0.0,
     );
   }
 
@@ -94,13 +99,23 @@ class FaceDetectionResult {
 
   factory FaceDetectionResult.fromMap(Map<String, dynamic> map) {
     final facesList = (map['faces'] as List<dynamic>?)
-            ?.map((face) => FaceDetection.fromMap(face as Map<String, dynamic>))
+            ?.map((face) {
+              if (face is Map) {
+                return FaceDetection.fromMap(
+                  face.map(
+                    (key, value) => MapEntry(key.toString(), value),
+                  ),
+                );
+              }
+              return null;
+            })
+            .whereType<FaceDetection>()
             .toList() ??
         [];
 
     return FaceDetectionResult(
       faces: facesList,
-      inferenceTime: (map['inferenceTime'] as num).toDouble(),
+      inferenceTime: (map['inferenceTime'] as num?)?.toDouble() ?? 0.0,
     );
   }
 
@@ -116,4 +131,3 @@ class FaceDetectionResult {
     return 'FaceDetectionResult(faceCount: $faceCount, inferenceTime: ${inferenceTime.toStringAsFixed(2)}ms)';
   }
 }
-
