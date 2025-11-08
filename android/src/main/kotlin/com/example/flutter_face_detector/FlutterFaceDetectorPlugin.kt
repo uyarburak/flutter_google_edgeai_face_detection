@@ -56,31 +56,37 @@ class FlutterFaceDetectorPlugin : FlutterPlugin, MethodCallHandler {
             }
 
             val startTime = System.currentTimeMillis()
-            val results = detectFaces(bitmap)
+            val faceDetectorResult = detectFaces(bitmap)
             val inferenceTime = System.currentTimeMillis() - startTime
 
-            if (results == null) {
+            if (faceDetectorResult == null) {
                 result.error("DETECTION_FAILED", "Face detection failed", null)
                 return
             }
 
-            // ✅ 計算最高信心值（信心分數來自 detection.categories）
-            var maxConfidence = 0.0f
-            for (res in results) {
-              for (detection in res.detections()) { // ✅ 加上 ()
-                  val score = detection.categories().firstOrNull()?.score() ?: 0.0f // ✅ categories() 也一樣
-                  if (score > maxConfidence) {
-                      maxConfidence = score
-                  }
-              }
+            // ✅ Extract all detected faces with their bounding boxes and confidence scores
+            val facesList = mutableListOf<Map<String, Any>>()
+            
+            for (detection in faceDetectorResult.detections()) {
+                val score = detection.categories().firstOrNull()?.score() ?: 0.0f
+                val boundingBox = detection.boundingBox()
+                
+                val faceMap = HashMap<String, Any>()
+                faceMap["confidence"] = score.toDouble()
+                
+                val boundingBoxMap = HashMap<String, Double>()
+                boundingBoxMap["x"] = boundingBox.left().toDouble() / bitmap.width
+                boundingBoxMap["y"] = boundingBox.top().toDouble() / bitmap.height
+                boundingBoxMap["width"] = boundingBox.width().toDouble() / bitmap.width
+                boundingBoxMap["height"] = boundingBox.height().toDouble() / bitmap.height
+                
+                faceMap["boundingBox"] = boundingBoxMap
+                facesList.add(faceMap)
             }
 
-            val inferenceTimeString = String.format("%.2fms", inferenceTime.toFloat())
-            val confidenceString = String.format("%.2f%%", maxConfidence * 100)
-
-            val response = HashMap<String, String>()
-            response["inferenceTime"] = inferenceTimeString
-            response["confidence"] = confidenceString
+            val response = HashMap<String, Any>()
+            response["faces"] = facesList
+            response["inferenceTime"] = inferenceTime.toDouble()
 
             result.success(response)
             return
@@ -90,7 +96,7 @@ class FlutterFaceDetectorPlugin : FlutterPlugin, MethodCallHandler {
     }
 
     // ⭐ Mediapipe Tasks 臉部偵測
-    private fun detectFaces(bitmap: Bitmap): List<FaceDetectorResult>? {
+    private fun detectFaces(bitmap: Bitmap): FaceDetectorResult? {
         return try {
             // ✅ 1. 載入 blaze_face_short_range.tflite
             val baseOptions = BaseOptions.builder()
@@ -118,7 +124,7 @@ class FlutterFaceDetectorPlugin : FlutterPlugin, MethodCallHandler {
             detector.close()
 
             // 回傳結果
-            listOf(result)
+            result
         } catch (e: Exception) {
             e.printStackTrace()
             null

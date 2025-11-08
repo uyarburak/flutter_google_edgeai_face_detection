@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/services.dart';
@@ -31,17 +30,16 @@ class _MyAppState extends State<MyApp> {
     });
 
     try {
-      final Map<String, dynamic> result =
+      final FaceDetectionResult result =
           await _detector.faceDetectionFromImage(bytes);
 
-      final raw = result['confidence']?.toString() ?? '0';
-      final cleaned = raw.replaceAll('%', '').trim();
-      final value = double.tryParse(cleaned);
-      final confidence = (value ?? 0.0) / (raw.contains('%') ? 100 : 1);
+      final confidence = result.faces
+          .map((face) => face.confidence)
+          .reduce((a, b) => a > b ? a : b);
 
       setState(() {
         _confidenceValue = confidence.clamp(0.0, 1.0);
-        _inferenceTime = result['inferenceTime']?.toString() ?? 'N/A';
+        _inferenceTime = result.inferenceTime.toString();
       });
     } catch (e) {
       debugPrint('Face detection error: $e');
@@ -127,10 +125,10 @@ class _MyAppState extends State<MyApp> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 16, vertical: 8),
                           decoration: BoxDecoration(
-                            color: _statusColor.withOpacity(0.1),
+                            color: _statusColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
-                            border:
-                                Border.all(color: _statusColor.withOpacity(0.3)),
+                            border: Border.all(
+                                color: _statusColor.withValues(alpha: 0.3)),
                           ),
                           child: Text(
                             _statusText,

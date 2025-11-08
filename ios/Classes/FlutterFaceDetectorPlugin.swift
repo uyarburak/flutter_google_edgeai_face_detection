@@ -54,26 +54,38 @@ public class FlutterFaceDetectorPlugin: NSObject, FlutterPlugin {
         return
       }
 
-      // ✅ 取得最高信心值
-      var maxConfidence: Float = 0.0
-      if let firstResult = resultBundle.faceDetectorResults.first, 
-        let result = firstResult {
-        let detections = result.detections
+      // ✅ Extract all detected faces with their bounding boxes and confidence scores
+      var facesList: [[String: Any]] = []
+      
+      if let firstResult = resultBundle.faceDetectorResults.first,
+         let faceDetectorResult = firstResult {
+        let detections = faceDetectorResult.detections
+        let imageWidth = uiImage.size.width
+        let imageHeight = uiImage.size.height
+        
         for detection in detections {
-          if let score = detection.categories.first?.score, score > maxConfidence {
-            maxConfidence = score
-          }
+          guard let score = detection.categories.first?.score else { continue }
+          
+          let boundingBox = detection.boundingBox
+          
+          var faceMap: [String: Any] = [:]
+          faceMap["confidence"] = Double(score)
+          
+          var boundingBoxMap: [String: Double] = [:]
+          boundingBoxMap["x"] = Double(boundingBox.origin.x) / Double(imageWidth)
+          boundingBoxMap["y"] = Double(boundingBox.origin.y) / Double(imageHeight)
+          boundingBoxMap["width"] = Double(boundingBox.width) / Double(imageWidth)
+          boundingBoxMap["height"] = Double(boundingBox.height) / Double(imageHeight)
+          
+          faceMap["boundingBox"] = boundingBoxMap
+          facesList.append(faceMap)
         }
       }
-            
-      // ✅ 格式化輸出
-      let inferenceTimeString = String(format: "%.2fms", resultBundle.inferenceTime)
-      let confidenceString = String(format: "%.2f", maxConfidence * 100) + "%"  // 轉成百分比
 
-      // ✅ 同時回傳兩個資訊
+      // ✅ Return all faces with inference time
       result([
-        "inferenceTime": inferenceTimeString,
-        "confidence": confidenceString,
+        "faces": facesList,
+        "inferenceTime": resultBundle.inferenceTime,
       ])
 
     default:

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import 'flutter_face_detector_platform_interface.dart';
+import 'models/face_detection_result.dart';
 
 /// An implementation of [FlutterFaceDetectorPlatform] that uses method channels.
 class MethodChannelFlutterFaceDetector extends FlutterFaceDetectorPlatform {
@@ -17,16 +18,20 @@ class MethodChannelFlutterFaceDetector extends FlutterFaceDetectorPlatform {
   }
 
   @override
-  Future<Map<String, dynamic>> faceDetectionFromImage(Uint8List imageData) async {
+  Future<FaceDetectionResult> faceDetectionFromImage(Uint8List imageData) async {
     final result = await methodChannel.invokeMethod<dynamic>(
       'faceDetectionFromImage',
-      <dynamic, dynamic>{'image': imageData}, // 👈 明確用 dynamic key/value
+      <dynamic, dynamic>{'image': imageData},
     );
 
     if (result is Map) {
-      return Map<String, dynamic>.from(result);
+      return FaceDetectionResult.fromMap(Map<String, dynamic>.from(result));
     } else {
-      return {'error': 'Invalid response from native'};
+      throw PlatformException(
+        code: 'INVALID_RESPONSE',
+        message: 'Invalid response from native',
+        details: result,
+      );
     }
   }
 }
