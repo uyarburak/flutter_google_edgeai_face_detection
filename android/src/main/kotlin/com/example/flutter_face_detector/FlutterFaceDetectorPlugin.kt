@@ -75,10 +75,10 @@ class FlutterFaceDetectorPlugin : FlutterPlugin, MethodCallHandler {
                 faceMap["confidence"] = score.toDouble()
                 
                 val boundingBoxMap = HashMap<String, Double>()
-                boundingBoxMap["x"] = boundingBox.left().toDouble() / bitmap.width
-                boundingBoxMap["y"] = boundingBox.top().toDouble() / bitmap.height
-                boundingBoxMap["width"] = boundingBox.width().toDouble() / bitmap.width
-                boundingBoxMap["height"] = boundingBox.height().toDouble() / bitmap.height
+                boundingBoxMap["x"] = boundingBox.left.toDouble() / bitmap.width
+                boundingBoxMap["y"] = boundingBox.top.toDouble() / bitmap.height
+                boundingBoxMap["width"] = boundingBox.width.toDouble() / bitmap.width
+                boundingBoxMap["height"] = boundingBox.height.toDouble() / bitmap.height
                 
                 faceMap["boundingBox"] = boundingBoxMap
                 facesList.add(faceMap)
